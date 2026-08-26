@@ -9,520 +9,309 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="radio"] { width: 1.5rem; height: 1.5rem; }
-        /* 載入動畫 */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spinner { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body class="bg-slate-100 text-gray-800 font-sans min-h-screen">
 
-    <!-- 雲端同步載入遮罩 -->
     <div id="loading-overlay" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center text-white flex-col">
         <div class="text-6xl mb-4 spinner">🔄</div>
-        <div id="loading-text" class="text-xl font-bold tracking-wide">正在與 Google 雲端同步中...</div>
+        <div id="loading-text" class="text-xl font-bold tracking-wide">與雲端同步中...</div>
     </div>
 
-    <!-- ================= 登入畫面 ================= -->
+    <!-- 登入畫面 -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center p-4 hidden">
         <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
             <div class="text-5xl mb-4">💻</div>
-            <h1 class="text-2xl font-bold text-blue-800 mb-2">2026-27資訊科技領袖生點名系統</h1>
-            <p class="text-gray-500 mb-6 text-sm">請輸入您的專屬帳號與密碼登入</p>
-            
-            <form onsubmit="handleLogin(event)" class="space-y-5 text-left">
+            <h1 class="text-2xl font-bold text-blue-800 mb-2">IT Prefects 點名系統</h1>
+            <form onsubmit="handleLogin(event)" class="space-y-5 text-left mt-6">
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">登入名稱 (帳號)</label>
-                    <input type="text" id="login-username" required class="w-full border-2 border-gray-300 rounded-xl p-3 text-lg outline-none focus:border-blue-500" placeholder="例如: 呀一">
+                    <input type="text" id="login-username" required class="w-full border-2 rounded-xl p-3 outline-none focus:border-blue-500">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">密碼</label>
-                    <input type="password" id="login-password" required class="w-full border-2 border-gray-300 rounded-xl p-3 text-lg outline-none focus:border-blue-500" placeholder="例如: 111">
+                    <input type="password" id="login-password" required class="w-full border-2 rounded-xl p-3 outline-none focus:border-blue-500">
                 </div>
                 <div id="login-error" class="text-red-500 text-sm hidden font-medium text-center">❌ 帳號或密碼錯誤</div>
-                
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl font-bold text-lg transition shadow-md mt-4">
-                    登入系統
-                </button>
+                <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg shadow-md">登入系統</button>
             </form>
         </div>
     </div>
 
-    <!-- ================= 系統主框架 ================= -->
+    <!-- 系統主框架 -->
     <div id="app-container" class="hidden">
-        <!-- 頂部導覽列 -->
         <nav class="bg-blue-800 text-white shadow-md sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center py-3">
-                    <div class="text-lg font-bold flex items-center gap-2 truncate">
-                        <span id="current-user-display">2026-27 IT Prefects</span>
-                    </div>
-                    <div class="flex space-x-2 overflow-x-auto no-scrollbar">
-                        <button id="nav-teacher" onclick="switchTab('teacher')" class="nav-btn px-4 py-2 rounded-lg bg-blue-900 font-medium transition hidden">管理總覽</button>
-                        <button id="nav-captain" onclick="switchTab('captain')" class="nav-btn px-4 py-2 rounded-lg hover:bg-blue-700 transition hidden">點名板</button>
-                        <button id="nav-student" onclick="switchTab('student')" class="nav-btn px-4 py-2 rounded-lg hover:bg-blue-700 transition hidden">請假申請</button>
-                        <button onclick="logout()" class="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 font-medium transition ml-2">登出</button>
-                    </div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-3">
+                <div class="text-lg font-bold flex items-center gap-2 truncate">
+                    <span id="current-user-display">IT Prefects</span>
+                </div>
+                <div class="flex space-x-2 overflow-x-auto no-scrollbar">
+                    <button id="nav-teacher" onclick="switchTab('teacher')" class="nav-btn px-4 py-2 rounded-lg bg-blue-900 font-medium transition hidden">管理總覽</button>
+                    <button id="nav-captain" onclick="switchTab('captain')" class="nav-btn px-4 py-2 rounded-lg hover:bg-blue-700 transition hidden">點名板</button>
+                    <button id="nav-student" onclick="switchTab('student')" class="nav-btn px-4 py-2 rounded-lg hover:bg-blue-700 transition hidden">請假申請</button>
+                    <button onclick="fetchLatestData()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 font-medium ml-2 text-sm">🔄 更新</button>
+                    <button onclick="logout()" class="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 font-medium transition ml-1">登出</button>
                 </div>
             </div>
         </nav>
 
-        <!-- 主內容區 -->
         <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-
-            <!-- ================= 1. 同學模式 (請假) ================= -->
+            <!-- 1. 同學模式 (請假) -->
             <section id="role-student" class="tab-section hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h2 class="text-2xl font-bold mb-6 text-blue-800 border-b pb-3">📝 提交請假申請</h2>
                     <form id="leave-form" onsubmit="submitLeave(event)" class="space-y-5">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-gray-700 mb-2 font-medium">請假日期</label>
-                                <input type="date" id="leave-date" required class="w-full border-2 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-lg">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 mb-2 font-medium">假別</label>
-                                <select id="leave-type" required class="w-full border-2 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-lg bg-white">
-                                    <option value="病假">病假</option>
-                                    <option value="事假">事假</option>
-                                </select>
-                            </div>
+                            <div><label class="block text-gray-700 mb-2 font-medium">請假日期</label><input type="date" id="leave-date" required class="w-full border-2 rounded-xl px-4 py-3 outline-none text-lg"></div>
+                            <div><label class="block text-gray-700 mb-2 font-medium">假別</label><select id="leave-type" required class="w-full border-2 rounded-xl px-4 py-3 outline-none text-lg"><option value="病假">病假</option><option value="事假">事假</option></select></div>
                         </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2 font-medium">請假原因 <span class="text-gray-400 text-sm font-normal">(最多 100 字)</span></label>
-                            <!-- 優化：加入 maxlength="100" 限制字數 -->
-                            <textarea id="leave-reason" maxlength="100" required rows="3" class="w-full border-2 rounded-xl px-4 py-3 outline-none focus:border-blue-500 text-lg" placeholder="請填寫詳細原因..."></textarea>
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-bold text-lg transition shadow-md">
-                            確認提交
-                        </button>
+                        <div><label class="block text-gray-700 mb-2 font-medium">請假原因 (最多100字)</label><textarea id="leave-reason" maxlength="100" required rows="3" class="w-full border-2 rounded-xl px-4 py-3 outline-none text-lg"></textarea></div>
+                        <button type="submit" class="w-full bg-blue-600 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-md">確認提交</button>
                     </form>
                 </div>
-
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h2 class="text-xl font-bold mb-4 text-gray-800">🕰️ 我的請假紀錄</h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
-                            <thead class="bg-gray-100 text-gray-600">
-                                <tr>
-                                    <th class="py-3 px-4 rounded-tl-lg">請假日期</th>
-                                    <th class="py-3 px-4">假別</th>
-                                    <th class="py-3 px-4">原因</th>
-                                    <th class="py-3 px-4 text-center">狀態</th>
-                                    <th class="py-3 px-4 text-center rounded-tr-lg">操作</th> <!-- 優化：新增操作欄 -->
-                                </tr>
-                            </thead>
-                            <tbody id="student-leave-list" class="divide-y text-gray-700"></tbody>
+                            <thead class="bg-gray-100"><tr><th class="py-3 px-4">請假日期</th><th class="py-3 px-4">假別</th><th class="py-3 px-4">原因</th><th class="py-3 px-4 text-center">狀態</th><th class="py-3 px-4 text-center">操作</th></tr></thead>
+                            <tbody id="student-leave-list" class="divide-y"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- ================= 2. 隊長模式 (點名) ================= -->
+            <!-- 2. 隊長模式 (點名) -->
             <section id="role-captain" class="tab-section hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <div class="flex flex-col md:flex-row justify-between md:items-end mb-6 gap-4 border-b pb-4">
-                        <div>
-                            <h2 class="text-2xl font-bold text-purple-700 mb-2">📋 隊長點名板</h2>
-                            <div class="text-gray-500 text-sm">💡 系統已自動篩選出該日期需要當值的同學</div>
-                        </div>
+                        <div><h2 class="text-2xl font-bold text-purple-700 mb-2">📋 隊長點名板</h2></div>
                         <div class="flex flex-col items-end gap-2">
-                            <input type="date" id="rollcall-date" class="border-2 rounded-xl px-4 py-2 outline-none focus:border-purple-500 font-bold text-lg" onchange="renderRollCallList()">
-                            <div id="day-indicator" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg font-medium text-sm">
-                                載入中...
-                            </div>
+                            <input type="date" id="rollcall-date" class="border-2 rounded-xl px-4 py-2 outline-none font-bold text-lg" onchange="renderRollCallList()">
+                            <div id="day-indicator" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg font-medium text-sm">載入中...</div>
                         </div>
                     </div>
-
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px]">
-                            <thead class="bg-purple-50 text-purple-800">
-                                <tr>
-                                    <th class="py-3 px-4 rounded-tl-lg">姓名 (班別(學號))</th>
-                                    <th class="py-3 px-4">當值位置</th>
-                                    <th class="py-3 px-4 min-w-[200px] rounded-tr-lg">狀態選擇</th>
-                                </tr>
-                            </thead>
+                            <thead class="bg-purple-50 text-purple-800"><tr><th class="py-3 px-4">姓名 (班別)</th><th class="py-3 px-4">當值位置</th><th class="py-3 px-4">狀態選擇</th></tr></thead>
                             <tbody id="rollcall-list" class="divide-y text-lg"></tbody>
                         </table>
                     </div>
-                    
                     <div class="mt-8 flex justify-end">
-                        <button onclick="saveRollCall()" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white px-10 py-4 rounded-xl font-bold text-lg transition shadow-lg">
-                            💾 儲存點名紀錄至雲端
-                        </button>
+                        <button onclick="saveRollCall()" class="w-full md:w-auto bg-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg">💾 儲存點名紀錄至雲端</button>
                     </div>
                 </div>
             </section>
 
-            <!-- ================= 3. 老師模式 (管理) ================= -->
+            <!-- 3. 老師模式 (管理) -->
             <section id="role-teacher" class="tab-section hidden space-y-6">
                 
                 <!-- 待辦請假 -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-orange-400">
-                    <h2 class="text-xl font-bold mb-4 text-orange-600 flex items-center gap-2">
-                        ⏳ 待處理請假單 <span id="pending-count" class="bg-orange-100 text-orange-700 text-sm px-3 py-1 rounded-full">0</span>
-                    </h2>
+                    <h2 class="text-xl font-bold mb-4 text-orange-600 flex items-center gap-2">⏳ 待處理請假單 <span id="pending-count" class="bg-orange-100 text-orange-700 text-sm px-3 py-1 rounded-full">0</span></h2>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="py-3 px-4">學生</th>
-                                    <th class="py-3 px-4">請假日期</th>
-                                    <th class="py-3 px-4">假別與原因</th>
-                                    <th class="py-3 px-4 text-right">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-pending-leaves" class="divide-y"></tbody>
-                        </table>
+                        <table class="w-full text-left border-collapse"><thead class="bg-gray-50"><tr><th class="py-3 px-4">學生</th><th class="py-3 px-4">日期</th><th class="py-3 px-4">假別與原因</th><th class="py-3 px-4 text-right">操作</th></tr></thead><tbody id="teacher-pending-leaves" class="divide-y"></tbody></table>
                     </div>
                 </div>
 
-                <!-- 整合：帳號與學生管理 -->
+                <!-- 帳號管理 -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <div class="flex flex-col md:flex-row justify-between items-center border-b pb-4 mb-4 gap-4">
-                        <h2 class="text-xl font-bold text-blue-700">👩‍🎓 系統帳號與學生當值管理</h2>
-                        <button onclick="saveAllUsers()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-bold transition shadow-md w-full md:w-auto">
-                            💾 統一儲存全部變更至雲端
-                        </button>
+                        <h2 class="text-xl font-bold text-blue-700">👩‍🎓 系統帳號與當值管理</h2>
+                        <button onclick="saveAllUsers()" class="bg-green-600 text-white px-6 py-2 rounded-xl font-bold w-full md:w-auto">💾 統一儲存變更至雲端</button>
                     </div>
                     
-                    <div class="grid grid-cols-2 md:grid-cols-7 gap-2 mb-4 bg-blue-50 p-3 rounded-xl items-end">
-                        <div class="col-span-2 md:col-span-1"><label class="text-xs text-gray-500">角色</label><select id="n-role" class="border p-2 w-full rounded-lg bg-white"><option value="student">同學</option><option value="captain">隊長</option><option value="teacher">老師</option></select></div>
-                        <div class="col-span-1 md:col-span-1"><label class="text-xs text-gray-500">姓名</label><input type="text" id="n-name" class="border p-2 w-full rounded-lg"></div>
-                        <div class="col-span-1 md:col-span-1"><label class="text-xs text-gray-500">班別(學號)</label><input type="text" id="n-sid" class="border p-2 w-full rounded-lg" placeholder="例如: 1A(01)"></div>
-                        <div class="col-span-1 md:col-span-1"><label class="text-xs text-gray-500">登入帳號</label><input type="text" id="n-un" class="border p-2 w-full rounded-lg"></div>
-                        <div class="col-span-1 md:col-span-1"><label class="text-xs text-gray-500">密碼</label><input type="text" id="n-pw" class="border p-2 w-full rounded-lg"></div>
-                        <div class="col-span-1 md:col-span-1"><label class="text-xs text-gray-500">星期</label><select id="n-day" class="border p-2 w-full rounded-lg bg-white"><option value="1">星期一</option><option value="2">星期二</option><option value="3">星期三</option><option value="4">星期四</option><option value="5">星期五</option><option value="">無</option></select></div>
-                        <div class="col-span-1 md:col-span-1"><label class="text-xs text-gray-500">位置</label><select id="n-loc" class="border p-2 w-full rounded-lg bg-white"><option value="1/F">1/F</option><option value="2/F">2/F</option><option value="3/F">3/F</option><option value="4/F">4/F</option><option value="5/F">5/F</option><option value="">無</option></select></div>
-                        <div class="col-span-2 md:col-span-7"><button onclick="addUser()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold w-full transition">＋ 新增並同步至雲端</button></div>
+                    <div class="grid grid-cols-2 md:grid-cols-7 gap-2 mb-4 bg-blue-50 p-3 rounded-xl items-end text-sm">
+                        <div><label class="text-xs text-gray-500">角色</label><select id="n-role" class="border p-2 w-full rounded-lg bg-white"><option value="student">同學</option><option value="captain">隊長</option><option value="teacher">老師</option></select></div>
+                        <div><label class="text-xs text-gray-500">姓名</label><input type="text" id="n-name" class="border p-2 w-full rounded-lg"></div>
+                        <div><label class="text-xs text-gray-500">班別(學號)</label><input type="text" id="n-sid" class="border p-2 w-full rounded-lg"></div>
+                        <div><label class="text-xs text-gray-500">帳號</label><input type="text" id="n-un" class="border p-2 w-full rounded-lg"></div>
+                        <div><label class="text-xs text-gray-500">密碼</label><input type="text" id="n-pw" class="border p-2 w-full rounded-lg"></div>
+                        <div><label class="text-xs text-gray-500">當值星期 (例:1,3)</label><input type="text" id="n-day" placeholder="1=一, 2=二..." class="border p-2 w-full rounded-lg"></div>
+                        <div><label class="text-xs text-gray-500">位置</label><input type="text" id="n-loc" class="border p-2 w-full rounded-lg"></div>
+                        <div class="col-span-2 md:col-span-7"><button onclick="addUser()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold w-full">＋ 新增</button></div>
                     </div>
 
-                    <!-- 優化：即時過濾搜尋欄位 -->
-                    <div class="mb-3">
-                        <input type="text" id="search-user" onkeyup="filterUsers()" placeholder="🔍 輸入姓名、學號或帳號快速搜尋..." class="w-full border-2 rounded-lg px-4 py-2 outline-none focus:border-blue-500 text-sm">
-                    </div>
+                    <div class="mb-3"><input type="text" id="search-user" onkeyup="filterUsers()" placeholder="🔍 輸入姓名、學號或帳號快速搜尋..." class="w-full border-2 rounded-lg px-4 py-2 outline-none focus:border-blue-500"></div>
 
                     <div class="overflow-y-auto border rounded-xl max-h-[500px]">
                         <table class="w-full text-left border-collapse text-sm min-w-[800px]">
-                            <thead class="bg-gray-100 sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th class="py-2 px-3">姓名 / 班別(學號)</th>
-                                    <th class="py-2 px-3">登入帳號 / 密碼</th>
-                                    <th class="py-2 px-3">角色 / 當值設定</th>
-                                    <th class="py-2 px-3 text-center w-24">操作</th>
-                                </tr>
-                            </thead>
+                            <thead class="bg-gray-100 sticky top-0 z-10"><tr><th class="py-2 px-3">姓名 / 班別(學號)</th><th class="py-2 px-3">登入帳號 / 密碼</th><th class="py-2 px-3">角色 / 星期 / 位置</th><th class="py-2 px-3 text-center w-24">操作</th></tr></thead>
                             <tbody id="teacher-user-manager" class="divide-y bg-white"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- 累積出席統計 -->
+                <!-- 累積統計 -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-6">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
                         <h2 class="text-xl font-bold text-indigo-700">📊 累積出席率統計</h2>
-                        
                         <div class="flex flex-wrap gap-2 items-center bg-indigo-50 p-2 rounded-lg">
-                            <select id="stat-mode" onchange="toggleStatInputs()" class="border-2 rounded-lg px-3 py-2 outline-none bg-white font-medium">
-                                <option value="month">單一月份</option>
-                                <option value="year">全年度 (年)</option>
-                                <option value="range">自訂月份區間</option>
-                            </select>
-                            
+                            <select id="stat-mode" onchange="toggleStatInputs()" class="border-2 rounded-lg px-3 py-2 outline-none font-medium"><option value="month">單一月份</option><option value="year">全年度</option><option value="range">自訂區間</option></select>
                             <input type="month" id="stat-month" class="border-2 rounded-lg px-3 py-2 outline-none stat-input block">
-                            
-                            <select id="stat-year" class="border-2 rounded-lg px-3 py-2 outline-none bg-white stat-input hidden">
-                                <option value="2025">2025 年</option>
-                                <option value="2026">2026 年</option>
-                                <option value="2027">2027 年</option>
-                            </select>
-                            
-                            <div id="stat-range-group" class="items-center gap-1 stat-input hidden flex">
-                                <input type="month" id="stat-start" class="border-2 rounded-lg px-2 py-2 outline-none text-sm">
-                                <span class="text-gray-500">至</span>
-                                <input type="month" id="stat-end" class="border-2 rounded-lg px-2 py-2 outline-none text-sm">
-                            </div>
-
-                            <button onclick="renderStats()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700">🔍 查詢</button>
-                            <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 ml-auto">📥 匯出 CSV</button>
+                            <select id="stat-year" class="border-2 rounded-lg px-3 py-2 outline-none stat-input hidden"><option value="2025">2025 年</option><option value="2026">2026 年</option></select>
+                            <div id="stat-range-group" class="items-center gap-1 stat-input hidden flex"><input type="month" id="stat-start" class="border-2 rounded-lg px-2 py-2 text-sm"><span class="text-gray-500">至</span><input type="month" id="stat-end" class="border-2 rounded-lg px-2 py-2 text-sm"></div>
+                            <button onclick="renderStats()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">🔍 查詢</button>
+                            <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold ml-auto">📥 匯出 CSV</button>
                         </div>
                     </div>
-                    
                     <div class="overflow-x-auto">
-                        <table class="w-full text-center border-collapse min-w-[600px]">
-                            <thead class="bg-indigo-50 text-indigo-800">
-                                <tr>
-                                    <th class="py-3 px-4 text-left">學生姓名 (班別(學號))</th>
-                                    <th class="py-3 px-4" title="實際有被點名的日數">應到(有紀錄)日數</th>
-                                    <th class="py-3 px-4 text-green-600">出席日數</th>
-                                    <th class="py-3 px-4 text-blue-600">請假日數</th>
-                                    <th class="py-3 px-4 text-red-600">缺席日數</th>
-                                    <th class="py-3 px-4 font-bold">出席率</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacher-stats-list" class="divide-y text-gray-700"></tbody>
-                        </table>
+                        <table class="w-full text-center border-collapse min-w-[600px]"><thead class="bg-indigo-50 text-indigo-800"><tr><th class="py-3 px-4 text-left">學生姓名</th><th class="py-3 px-4">應到(有紀錄)日數</th><th class="py-3 px-4 text-green-600">出席</th><th class="py-3 px-4 text-blue-600">請假</th><th class="py-3 px-4 text-red-600">缺席</th><th class="py-3 px-4 font-bold">出席率</th></tr></thead><tbody id="teacher-stats-list" class="divide-y"></tbody></table>
                     </div>
                 </div>
-
             </section>
         </main>
     </div>
 
     <!-- 腳本 -->
     <script>
-        // ================= ⚠️ 將這裡替換為您的 Google Apps Script URL =================
+        // ================= ⚠️ 替換您的 Google Apps Script URL =================
         const API_URL = "https://script.google.com/macros/s/AKfycbycrJdV75tW-N2_nyO9CA3gAlpcJgJtdfL-vXRcfzhATPcn0CgAvVE2T5taGDA9Ij_MLg/exec"; 
         
-        // 預設帳號
-        const defaultUsers = [
-            { id: 'u_t', username: 'teacher', password: '123', name: '老師', role: 'teacher' },
-            { id: 'u_c', username: '隊長', password: '000', name: '隊長', role: 'captain' },
-            { id: 's1', username: '呀一', password: '111', name: '呀一', role: 'student', studentId: '1A(01)', dutyDay: 1, dutyLocation: '1/F' },
-            { id: 's2', username: '呀二', password: '222', name: '呀二', role: 'student', studentId: '1B(12)', dutyDay: 1, dutyLocation: '2/F' }
-        ];
-
         let db = { users: [], attendance: {}, leaves: [] };
         let currentUser = null;
 
-        const getToday = () => {
-            const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-            return (new Date(Date.now() - tzOffset)).toISOString().split('T')[0];
-        };
+        const getToday = () => { const tzOffset = (new Date()).getTimezoneOffset() * 60000; return (new Date(Date.now() - tzOffset)).toISOString().split('T')[0]; };
         const getCurrentMonth = () => getToday().substring(0, 7);
         const DAY_NAMES = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
-        const ROLE_NAMES = { 'student': '同學', 'captain': '隊長', 'teacher': '老師' };
-        const LEAVE_STATUS = {
-            pending: { label: '待審核', color: 'text-orange-600 bg-orange-100' },
-            approved: { label: '已批准', color: 'text-green-600 bg-green-100' },
-            rejected: { label: '已拒絕', color: 'text-red-600 bg-red-100' }
-        };
+        const LEAVE_STATUS = { pending: { label: '待審核', color: 'text-orange-600 bg-orange-100' }, approved: { label: '已批准', color: 'text-green-600 bg-green-100' }, rejected: { label: '已拒絕', color: 'text-red-600 bg-red-100' } };
 
-        // ================= 載入與同步 (與 Google Sheets 互動) =================
-        function showLoading(text) {
-            document.getElementById('loading-text').innerText = text;
-            document.getElementById('loading-overlay').classList.remove('hidden');
-        }
-        function hideLoading() {
-            document.getElementById('loading-overlay').classList.add('hidden');
-        }
+        // ================= 核心連線功能 (增量更新) =================
+        function showLoading(text) { document.getElementById('loading-text').innerText = text; document.getElementById('loading-overlay').classList.remove('hidden'); }
+        function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
-        window.onload = async () => {
+        // 啟動載入
+        window.onload = () => {
             document.getElementById('rollcall-date').value = getToday();
             document.getElementById('leave-date').value = getToday();
             document.getElementById('stat-month').value = getCurrentMonth();
-            document.getElementById('stat-year').value = getToday().substring(0, 4);
             document.getElementById('stat-start').value = getCurrentMonth();
             document.getElementById('stat-end').value = getCurrentMonth();
-
-            if (API_URL === "在此貼上您的_WEB_APP_URL") {
-                alert("⚠️ 尚未設定 Google API_URL！\n系統無法連線至雲端，將只能顯示介面而無法儲存。");
-                hideLoading();
-                document.getElementById('login-screen').classList.remove('hidden');
-                return;
-            }
-
-            try {
-                const response = await fetch(API_URL);
-                const cloudDB = await response.json();
-                
-                if (cloudDB.users && cloudDB.users.length > 0) {
-                    db = cloudDB;
-                } else {
-                    db.users = defaultUsers;
-                    await saveDataToCloud();
-                }
-            } catch (e) {
-                console.error(e);
-                alert("無法連接到 Google 試算表，請確認您的 API 網址是否正確。");
-            }
-            
-            hideLoading();
-            document.getElementById('login-screen').classList.remove('hidden');
+            fetchLatestData();
         };
 
-        async function saveDataToCloud(silent = false) {
-            if (!silent) showLoading("正在同步資料至雲端...");
+        async function fetchLatestData() {
+            showLoading("與雲端同步中...");
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "save", data: db }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                const result = await response.json();
-                if (result.status !== 'success') throw new Error(result.error);
-                if (!silent) hideLoading();
-                return true;
-            } catch (e) {
-                console.error(e);
+                const response = await fetch(API_URL);
+                db = await response.json();
                 hideLoading();
-                alert("儲存失敗，請檢查網路連線或 API 權限設定。");
-                return false;
+                if(currentUser) switchTab(currentUser.role);
+                else document.getElementById('login-screen').classList.remove('hidden');
+            } catch (e) {
+                hideLoading(); alert("⚠️ 連線失敗，請確認 API_URL！");
             }
         }
 
-        // ================= 登入與導航 =================
+        // 發送動作指令給後端 (解決覆蓋問題)
+        async function sendAction(payload) {
+            showLoading("安全儲存中...");
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    db = result.data; // 儲存成功後，直接使用後端回傳的最新資料
+                    hideLoading();
+                    return true;
+                } else throw new Error(result.error);
+            } catch (e) {
+                hideLoading(); alert("儲存失敗！"); return false;
+            }
+        }
+
+        // ================= 登入 =================
         function handleLogin(e) {
             e.preventDefault();
             const un = document.getElementById('login-username').value.trim();
             const pw = document.getElementById('login-password').value.trim();
-            
             const user = db.users.find(u => u.username === un && u.password === pw);
-            if (user) {
-                document.getElementById('login-error').classList.add('hidden');
-                login(user);
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
-            }
+            if (user) { document.getElementById('login-error').classList.add('hidden'); login(user); } 
+            else { document.getElementById('login-error').classList.remove('hidden'); }
         }
 
         function login(user) {
             currentUser = user;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('current-user-display').innerText = `👤 ${user.name} (${ROLE_NAMES[user.role]})`;
+            document.getElementById('current-user-display').innerText = `👤 ${user.name}`;
 
             document.getElementById('nav-teacher').classList.toggle('hidden', user.role !== 'teacher');
             document.getElementById('nav-captain').classList.toggle('hidden', user.role !== 'captain');
             document.getElementById('nav-student').classList.toggle('hidden', user.role === 'teacher'); 
 
-            if (user.role === 'teacher') switchTab('teacher');
-            else if (user.role === 'captain') switchTab('captain');
-            else switchTab('student');
+            switchTab(user.role);
         }
+        function logout() { location.reload(); }
 
-        function logout() {
-            currentUser = null;
-            document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-        }
-
-        function switchTab(tabId) {
+        function switchTab(role) {
             document.querySelectorAll('.tab-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`role-${tabId}`).classList.remove('hidden');
-
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-900');
-                btn.classList.add('hover:bg-blue-700');
-            });
-            document.getElementById(`nav-${tabId}`).classList.add('bg-blue-900');
-            document.getElementById(`nav-${tabId}`).classList.remove('hover:bg-blue-700');
-
-            if (tabId === 'student') renderStudentLeaves();
-            if (tabId === 'captain') renderRollCallList();
-            if (tabId === 'teacher') {
-                renderPendingLeaves();
-                renderUserManager();
-                renderStats();
-            }
+            document.getElementById(`role-${role}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('bg-blue-900', 'hover:bg-blue-700'));
+            document.getElementById(`nav-${role}`).classList.replace('hover:bg-blue-700', 'bg-blue-900');
+            if (role === 'student') renderStudentLeaves();
+            if (role === 'captain') renderRollCallList();
+            if (role === 'teacher') { renderPendingLeaves(); renderUserManager(); renderStats(); }
         }
 
-        // ================= 1. 同學模式 (請假) =================
+        // ================= 同學 (請假) =================
         async function submitLeave(e) {
             e.preventDefault();
             const date = document.getElementById('leave-date').value;
+            if (db.leaves.find(l => l.studentId === currentUser.id && l.date === date)) return alert("⚠️ 您這天已提交過請假！");
             
-            if (db.leaves.find(l => l.studentId === currentUser.id && l.date === date)) {
-                return alert("⚠️ 您這天已提交過請假申請！");
-            }
-            db.leaves.push({
-                id: Date.now().toString(),
-                studentId: currentUser.id,
-                date: date,
-                type: document.getElementById('leave-type').value,
-                reason: document.getElementById('leave-reason').value,
-                status: 'pending'
-            });
-            
-            const success = await saveDataToCloud();
-            if (success) {
-                document.getElementById('leave-reason').value = '';
-                alert("✅ 申請已提交至雲端！");
-                renderStudentLeaves();
+            const newLeave = { id: Date.now().toString(), studentId: currentUser.id, date: date, type: document.getElementById('leave-type').value, reason: document.getElementById('leave-reason').value, status: 'pending' };
+            if(await sendAction({ action: 'submitLeave', leave: newLeave })) {
+                document.getElementById('leave-reason').value = ''; alert("✅ 提交成功"); renderStudentLeaves();
             }
         }
 
-        // 優化 1：學生撤回請假功能
-        async function revokeLeave(leaveId) {
-            if(!confirm("⚠️ 確定要撤回此筆請假申請嗎？")) return;
-            
-            db.leaves = db.leaves.filter(l => l.id !== leaveId);
-            const success = await saveDataToCloud();
-            if (success) {
-                alert("✅ 請假申請已成功撤回！");
-                renderStudentLeaves();
+        async function revokeLeave(id) {
+            if(confirm("⚠️ 確定撤回？") && await sendAction({ action: 'revokeLeave', leaveId: id })) {
+                alert("✅ 已撤回"); renderStudentLeaves();
             }
         }
 
         function renderStudentLeaves() {
             const myLeaves = db.leaves.filter(l => l.studentId === currentUser.id).sort((a,b) => new Date(b.date) - new Date(a.date));
-            const tbody = document.getElementById('student-leave-list');
-            
-            if (!myLeaves.length) return tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-500">目前無請假紀錄</td></tr>`;
-            
-            tbody.innerHTML = myLeaves.map(l => {
-                // 如果是待審核，顯示撤回按鈕
-                const actionBtn = l.status === 'pending' 
-                    ? `<button onclick="revokeLeave('${l.id}')" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition text-sm">撤回</button>` 
-                    : `<span class="text-gray-400 text-sm">-</span>`;
-
-                return `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="py-3 px-4">${l.date}</td>
-                    <td class="py-3 px-4"><span class="bg-gray-200 px-2 py-1 rounded text-sm">${l.type}</span></td>
-                    <td class="py-3 px-4 max-w-[200px] break-words">${l.reason}</td>
-                    <td class="py-3 px-4 text-center"><span class="px-2 py-1 rounded text-sm ${LEAVE_STATUS[l.status].color}">${LEAVE_STATUS[l.status].label}</span></td>
-                    <td class="py-3 px-4 text-center">${actionBtn}</td>
-                </tr>`;
-            }).join('');
+            document.getElementById('student-leave-list').innerHTML = myLeaves.map(l => `
+                <tr class="border-b">
+                    <td class="py-3 px-4">${l.date}</td><td class="py-3 px-4"><span class="bg-gray-200 px-2 rounded">${l.type}</span></td>
+                    <td class="py-3 px-4">${l.reason}</td><td class="py-3 px-4 text-center"><span class="px-2 rounded ${LEAVE_STATUS[l.status].color}">${LEAVE_STATUS[l.status].label}</span></td>
+                    <td class="py-3 px-4 text-center">${l.status==='pending'?`<button onclick="revokeLeave('${l.id}')" class="text-red-500 font-bold">撤回</button>`:'-'}</td>
+                </tr>`).join('') || `<tr><td colspan="5" class="py-4 text-center">無紀錄</td></tr>`;
         }
 
-        // ================= 2. 隊長模式 (點名) =================
+        // ================= 隊長 (點名) =================
         function renderRollCallList() {
             const dateStr = document.getElementById('rollcall-date').value;
-            if(!dateStr) return;
-            
             const dayOfWeek = new Date(dateStr).getDay(); 
             document.getElementById('day-indicator').innerText = `當值日：${DAY_NAMES[dayOfWeek]}`;
             
-            const tbody = document.getElementById('rollcall-list');
-            const onDutyStudents = db.users.filter(u => u.role !== 'teacher' && parseInt(u.dutyDay) === dayOfWeek);
+            // 支援多天當值判斷 (字串包含)
+            const onDuty = db.users.filter(u => u.role !== 'teacher' && (u.dutyDay||'').toString().split(',').includes(dayOfWeek.toString()));
 
-            if (onDutyStudents.length === 0) {
-                return tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500 font-medium">✨ 該日 (${DAY_NAMES[dayOfWeek]}) 無學生安排當值</td></tr>`;
-            }
+            const tbody = document.getElementById('rollcall-list');
+            if (!onDuty.length) return tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500">該日無學生當值</td></tr>`;
 
             const dailyRecord = db.attendance[dateStr] || {};
-
-            tbody.innerHTML = onDutyStudents.map(student => {
-                const status = dailyRecord[student.id] || 'none';
+            tbody.innerHTML = onDuty.map(student => {
+                const status = dailyRecord[student.id];
                 const hasLeave = db.leaves.some(l => l.studentId === student.id && l.date === dateStr && l.status === 'approved');
-                const stId = student.studentId ? `(${student.studentId})` : '';
                 
-                if (hasLeave) return `
-                    <tr class="bg-blue-50/50 border-b" data-sid="${student.id}">
-                        <td class="py-4 px-4 font-medium">${student.name} <span class="text-gray-500 text-sm">${stId}</span></td>
-                        <td class="py-4 px-4 text-gray-600 font-medium">${student.dutyLocation || '-'}</td>
-                        <td class="py-4 px-4"><span class="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium">🔵 已請假</span><input type="hidden" name="st-${student.id}" value="leave"></td>
-                    </tr>`;
+                if (hasLeave) return `<tr class="bg-blue-50/50 border-b" data-sid="${student.id}"><td class="py-4 px-4 font-medium">${student.name} <span class="text-sm text-gray-500">(${student.studentId})</span></td><td class="py-4 px-4 text-gray-600">${student.dutyLocation||'-'}</td><td class="py-4 px-4 text-blue-700 font-bold">🔵 已請假</td></tr>`;
 
                 return `
                     <tr class="hover:bg-gray-50 border-b" data-sid="${student.id}">
-                        <td class="py-4 px-4 font-medium">${student.name} <span class="text-gray-500 text-sm">${stId}</span></td>
-                        <td class="py-4 px-4 text-indigo-700 font-bold">${student.dutyLocation || '-'}</td>
-                        <td class="py-4 px-4">
-                            <div class="flex space-x-4">
-                                <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-green-50">
-                                    <input type="radio" name="st-${student.id}" value="present" ${status === 'present' ? 'checked' : ''} class="accent-green-600">
-                                    <span class="text-green-700 font-medium">出席</span>
-                                </label>
-                                <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-red-50">
-                                    <input type="radio" name="st-${student.id}" value="absent" ${status === 'absent' ? 'checked' : ''} class="accent-red-600">
-                                    <span class="text-red-700 font-medium">缺席</span>
-                                </label>
-                            </div>
+                        <td class="py-4 px-4 font-medium">${student.name} <span class="text-sm text-gray-500">(${student.studentId||''})</span></td>
+                        <td class="py-4 px-4 text-indigo-700 font-bold">${student.dutyLocation||'-'}</td>
+                        <td class="py-4 px-4 flex space-x-4">
+                            <label class="cursor-pointer p-2"><input type="radio" name="st-${student.id}" value="present" ${status==='present'?'checked':''} class="accent-green-600"> 出席</label>
+                            <label class="cursor-pointer p-2"><input type="radio" name="st-${student.id}" value="absent" ${status==='absent'?'checked':''} class="accent-red-600"> 缺席</label>
                         </td>
                     </tr>`;
             }).join('');
@@ -530,274 +319,146 @@
 
         async function saveRollCall() {
             const date = document.getElementById('rollcall-date').value;
-            
-            // 優化 2：防止意外覆蓋點名紀錄
-            if (db.attendance[date] && Object.keys(db.attendance[date]).length > 0) {
-                if(!confirm(`⚠️ 警告：系統偵測到 ${date} 已有部分點名紀錄。\n確定要更新/覆蓋現有資料嗎？`)) {
-                    return; // 使用者點擊取消，終止儲存
-                }
-            }
+            let records = {}; let unselected = 0;
 
-            if (!db.attendance[date]) db.attendance[date] = {};
-            let count = 0;
-
-            document.querySelectorAll('#rollcall-list tr').forEach(tr => {
+            document.querySelectorAll('#rollcall-list tr[data-sid]').forEach(tr => {
                 const sid = tr.getAttribute('data-sid');
-                if(!sid) return;
                 const checked = tr.querySelector(`input[name="st-${sid}"]:checked`);
-                const hidden = tr.querySelector(`input[type="hidden"][name="st-${sid}"]`);
-                const val = checked ? checked.value : (hidden ? hidden.value : null);
-                if (val) { db.attendance[date][sid] = val; count++; }
+                if (tr.innerText.includes('已請假')) return; // 請假略過檢查
+                if (checked) records[sid] = checked.value;
+                else unselected++;
             });
             
-            const success = await saveDataToCloud();
-            if(success) alert(`✅ 已儲存 ${count} 筆出席紀錄至雲端！`);
+            // 防漏點機制
+            if(unselected > 0 && !confirm(`⚠️ 警告：尚有 ${unselected} 位學生未點名！\n未點名者不會被計入出席率。確定要強制儲存嗎？`)) return;
+
+            if(await sendAction({ action: 'saveRollCall', date: date, records: records })) {
+                alert(`✅ 儲存成功！`); renderRollCallList();
+            }
         }
 
-        // ================= 3. 老師模式 (管理) =================
+        // ================= 老師 (管理) =================
         function renderPendingLeaves() {
             const pending = db.leaves.filter(l => l.status === 'pending');
             document.getElementById('pending-count').innerText = pending.length;
-            const tbody = document.getElementById('teacher-pending-leaves');
-            
-            if (!pending.length) return tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-500">無待辦事項</td></tr>`;
-            
-            tbody.innerHTML = pending.map(l => {
+            document.getElementById('teacher-pending-leaves').innerHTML = pending.map(l => {
                 const u = db.users.find(x => x.id === l.studentId);
-                const uname = u ? `${u.name} ${u.studentId ? '('+u.studentId+')':''}` : '未知使用者';
-                return `
-                <tr class="border-b">
-                    <td class="py-3 px-4 font-medium">${uname}</td>
-                    <td class="py-3 px-4">${l.date}</td>
-                    <td class="py-3 px-4"><span class="bg-gray-200 px-2 rounded text-sm mr-2">${l.type}</span>${l.reason}</td>
-                    <td class="py-3 px-4 text-right">
-                        <button onclick="processLeave('${l.id}', 'approved', '${l.date}', '${l.studentId}')" class="bg-green-500 text-white px-3 py-1 rounded shadow mb-1">批准</button>
-                        <button onclick="processLeave('${l.id}', 'rejected', '', '')" class="bg-red-500 text-white px-3 py-1 rounded shadow">拒絕</button>
-                    </td>
-                </tr>`;
-            }).join('');
+                return `<tr class="border-b"><td class="py-3 px-4 font-medium">${u?u.name:'-'}</td><td class="py-3 px-4">${l.date}</td><td class="py-3 px-4"><span class="bg-gray-200 px-2 rounded">${l.type}</span> ${l.reason}</td><td class="py-3 px-4 text-right"><button onclick="processLeave('${l.id}', 'approved', '${l.date}', '${l.studentId}')" class="bg-green-500 text-white px-3 py-1 rounded shadow mb-1">批准</button> <button onclick="processLeave('${l.id}', 'rejected', '${l.date}', '${l.studentId}')" class="bg-red-500 text-white px-3 py-1 rounded shadow">拒絕</button></td></tr>`;
+            }).join('') || `<tr><td colspan="4" class="py-4 text-center">無待辦</td></tr>`;
         }
 
         async function processLeave(id, status, date, studentId) {
-            db.leaves.find(l => l.id === id).status = status;
-            if (status === 'approved') {
-                if (!db.attendance[date]) db.attendance[date] = {};
-                db.attendance[date][studentId] = 'leave';
+            if(await sendAction({ action: 'reviewLeave', leaveId: id, status: status, date: date, studentId: studentId })) {
+                renderPendingLeaves(); renderStats();
             }
-            await saveDataToCloud(); 
-            renderPendingLeaves(); 
-            renderStats();
+        }
+
+        // 密碼顯示切換
+        function togglePwd(id) {
+            const el = document.getElementById(id);
+            el.type = el.type === 'password' ? 'text' : 'password';
         }
 
         function renderUserManager() {
             const tbody = document.getElementById('teacher-user-manager');
-            const dayOpts = (sel) => `<option value="">無</option>` + [1,2,3,4,5].map(d => `<option value="${d}" ${d==sel?'selected':''}>${DAY_NAMES[d]}</option>`).join('');
-            const locOpts = (sel) => `<option value="">無</option>` + ['1/F','2/F','3/F','4/F','5/F'].map(l => `<option value="${l}" ${l==sel?'selected':''}>${l}</option>`).join('');
-            const roleOpts = (sel) => `<option value="student" ${sel=='student'?'selected':''}>同學</option><option value="captain" ${sel=='captain'?'selected':''}>隊長</option><option value="teacher" ${sel=='teacher'?'selected':''}>老師</option>`;
-
             tbody.innerHTML = db.users.map(u => `
-                <tr class="hover:bg-gray-50 border-b user-row" data-search="${(u.name||'').toLowerCase()} ${(u.studentId||'').toLowerCase()} ${(u.username||'').toLowerCase()}">
+                <tr class="hover:bg-gray-50 border-b user-row">
                     <td class="py-2 px-3">
-                        <input type="text" id="eu-name-${u.id}" value="${u.name}" class="border p-1 w-full rounded mb-1 text-sm font-medium" placeholder="姓名">
-                        <input type="text" id="eu-sid-${u.id}" value="${u.studentId||''}" class="border p-1 w-full rounded text-xs text-gray-500" placeholder="班別(學號)">
-                    </td>
-                    <td class="py-2 px-3">
-                        <input type="text" id="eu-un-${u.id}" value="${u.username}" class="border p-1 w-full rounded mb-1 text-sm" placeholder="帳號">
-                        <input type="text" id="eu-pw-${u.id}" value="${u.password}" class="border p-1 w-full rounded text-sm" placeholder="密碼">
+                        <input type="text" id="eu-name-${u.id}" value="${u.name}" class="u-name border p-1 w-full rounded mb-1 text-sm font-medium">
+                        <input type="text" id="eu-sid-${u.id}" value="${u.studentId||''}" class="u-sid border p-1 w-full rounded text-xs">
                     </td>
                     <td class="py-2 px-3">
-                        <select id="eu-role-${u.id}" class="border p-1 w-full rounded bg-white text-sm mb-1">${roleOpts(u.role)}</select>
-                        <div class="flex gap-1">
-                            <select id="eu-day-${u.id}" class="border p-1 w-full rounded bg-white text-xs">${dayOpts(u.dutyDay)}</select>
-                            <select id="eu-loc-${u.id}" class="border p-1 w-full rounded bg-white text-xs">${locOpts(u.dutyLocation)}</select>
-                        </div>
+                        <input type="text" id="eu-un-${u.id}" value="${u.username}" class="u-un border p-1 w-full rounded mb-1 text-sm">
+                        <div class="flex"><input type="password" id="eu-pw-${u.id}" value="${u.password}" class="border p-1 w-full rounded-l text-sm"><button onclick="togglePwd('eu-pw-${u.id}')" class="bg-gray-200 px-2 rounded-r">👁️</button></div>
                     </td>
-                    <td class="py-2 px-3 text-center align-middle">
-                        <button onclick="deleteUser('${u.id}')" class="text-red-600 hover:text-red-800 font-bold block w-full py-2">刪除</button>
+                    <td class="py-2 px-3">
+                        <select id="eu-role-${u.id}" class="border p-1 w-full rounded bg-white text-sm mb-1"><option value="student" ${u.role=='student'?'selected':''}>同學</option><option value="captain" ${u.role=='captain'?'selected':''}>隊長</option><option value="teacher" ${u.role=='teacher'?'selected':''}>老師</option></select>
+                        <div class="flex gap-1"><input type="text" id="eu-day-${u.id}" value="${u.dutyDay||''}" placeholder="星期(例:1,3)" class="border p-1 w-1/2 rounded text-xs"><input type="text" id="eu-loc-${u.id}" value="${u.dutyLocation||''}" placeholder="位置" class="border p-1 w-1/2 rounded text-xs"></div>
                     </td>
-                </tr>
-            `).join('');
-            
-            // 重新渲染後維持當前的搜尋狀態
+                    <td class="py-2 px-3 text-center align-middle"><button onclick="deleteUser('${u.id}')" class="text-red-600 font-bold block w-full">刪除</button></td>
+                </tr>`).join('');
             filterUsers();
         }
 
-        // 優化 4：大量資料的即時過濾搜尋
+        // 即時動態過濾 (解決修改後搜不到的問題)
         function filterUsers() {
-            const keyword = document.getElementById('search-user').value.toLowerCase();
-            const rows = document.querySelectorAll('.user-row');
-            
-            rows.forEach(row => {
-                const searchText = row.getAttribute('data-search');
-                // 若包含關鍵字則顯示，否則隱藏 (使用 display 屬性瞬間切換)
-                if(searchText.includes(keyword)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+            const kw = document.getElementById('search-user').value.toLowerCase();
+            document.querySelectorAll('.user-row').forEach(row => {
+                const text = (row.querySelector('.u-name').value + row.querySelector('.u-sid').value + row.querySelector('.u-un').value).toLowerCase();
+                row.style.display = text.includes(kw) ? '' : 'none';
             });
         }
 
         async function saveAllUsers() {
-            let successCount = 0;
+            let updatedUsers = [];
             db.users.forEach(u => {
-                const nameEl = document.getElementById(`eu-name-${u.id}`);
-                if (!nameEl) return;
-                
-                u.name = nameEl.value.trim();
-                u.studentId = document.getElementById(`eu-sid-${u.id}`).value.trim();
-                u.username = document.getElementById(`eu-un-${u.id}`).value.trim();
-                u.password = document.getElementById(`eu-pw-${u.id}`).value.trim();
-                u.role = document.getElementById(`eu-role-${u.id}`).value;
-                const d = document.getElementById(`eu-day-${u.id}`).value;
-                u.dutyDay = d ? parseInt(d) : null;
-                u.dutyLocation = document.getElementById(`eu-loc-${u.id}`).value || null;
-                successCount++;
+                const n = document.getElementById(`eu-name-${u.id}`);
+                if (n) updatedUsers.push({ id: u.id, name: n.value.trim(), studentId: document.getElementById(`eu-sid-${u.id}`).value.trim(), username: document.getElementById(`eu-un-${u.id}`).value.trim(), password: document.getElementById(`eu-pw-${u.id}`).value.trim(), role: document.getElementById(`eu-role-${u.id}`).value, dutyDay: document.getElementById(`eu-day-${u.id}`).value.trim(), dutyLocation: document.getElementById(`eu-loc-${u.id}`).value.trim() });
             });
-            
-            const success = await saveDataToCloud();
-            if(success) {
-                alert(`✅ 成功同步儲存 ${successCount} 筆帳號與設定！`);
-                // 重新渲染列表以更新 data-search 屬性
-                renderUserManager(); 
-                renderStats();
+            if(await sendAction({ action: 'saveUsers', users: updatedUsers })) {
+                alert(`✅ 帳號資料已安全儲存！`); renderStats();
             }
         }
 
         async function addUser() {
-            const role = document.getElementById('n-role').value;
-            const name = document.getElementById('n-name').value.trim();
-            const sid = document.getElementById('n-sid').value.trim();
-            const un = document.getElementById('n-un').value.trim();
-            const pw = document.getElementById('n-pw').value.trim();
-            const day = document.getElementById('n-day').value;
-            const loc = document.getElementById('n-loc').value;
-
-            if(!name || !un || !pw) return alert("姓名、登入帳號、密碼為必填！");
-            if(db.users.find(u => u.username === un)) return alert("登入帳號已被使用！");
+            const role = document.getElementById('n-role').value; const name = document.getElementById('n-name').value.trim(); const sid = document.getElementById('n-sid').value.trim(); const un = document.getElementById('n-un').value.trim(); const pw = document.getElementById('n-pw').value.trim(); const day = document.getElementById('n-day').value; const loc = document.getElementById('n-loc').value;
+            if(!name || !un || !pw) return alert("必填不足！");
             
-            db.users.push({
-                id: 'u_'+Date.now(), name, username: un, password: pw, role, studentId: sid,
-                dutyDay: day ? parseInt(day) : null, dutyLocation: loc || null
-            });
+            // 先抓取最新資料檢查帳號是否重複
+            await fetchLatestData();
+            if(db.users.find(u => u.username === un)) return alert("帳號已存在！");
             
-            const success = await saveDataToCloud();
-            if(success) {
-                renderUserManager();
-                ['n-name','n-sid','n-un','n-pw'].forEach(id => document.getElementById(id).value = '');
+            db.users.push({ id: 'u_'+Date.now(), name, username: un, password: pw, role, studentId: sid, dutyDay: day, dutyLocation: loc });
+            if(await sendAction({ action: 'saveUsers', users: db.users })) {
+                renderUserManager(); ['n-name','n-sid','n-un','n-pw','n-day','n-loc'].forEach(id => document.getElementById(id).value = '');
             }
         }
 
         async function deleteUser(id) {
-            if(db.users.filter(u=>u.role==='teacher').length <= 1 && db.users.find(u=>u.id===id).role === 'teacher') 
-                return alert("系統至少需保留一名老師帳號！");
-            if(confirm("⚠️ 確定刪除此帳號與相關資料？\n(此動作會立刻同步至雲端)")) {
-                db.users = db.users.filter(x => x.id !== id);
-                await saveDataToCloud();
-                renderUserManager(); 
-                renderStats();
+            if(db.users.filter(u=>u.role==='teacher').length <= 1 && db.users.find(u=>u.id===id).role === 'teacher') return alert("需保留至少一名老師！");
+            if(confirm("確定刪除？") && await sendAction({ action: 'saveUsers', users: db.users.filter(x => x.id !== id) })) {
+                renderUserManager(); renderStats();
             }
         }
 
+        // 統計相關
         function toggleStatInputs() {
-            const mode = document.getElementById('stat-mode').value;
-            document.querySelectorAll('.stat-input').forEach(el => {
-                if(el.id === 'stat-range-group') el.classList.replace('flex', 'hidden');
-                else el.classList.add('hidden');
-            });
-            
-            if (mode === 'month') document.getElementById('stat-month').classList.remove('hidden');
-            else if (mode === 'year') document.getElementById('stat-year').classList.remove('hidden');
-            else if (mode === 'range') document.getElementById('stat-range-group').classList.replace('hidden', 'flex');
-        }
-
-        function getFilteredDates() {
-            const mode = document.getElementById('stat-mode').value;
-            const allDates = Object.keys(db.attendance);
-            
-            if (mode === 'month') {
-                const m = document.getElementById('stat-month').value;
-                return allDates.filter(d => d.startsWith(m));
-            } else if (mode === 'year') {
-                const y = document.getElementById('stat-year').value;
-                return allDates.filter(d => d.startsWith(y));
-            } else if (mode === 'range') {
-                const s = document.getElementById('stat-start').value;
-                const e = document.getElementById('stat-end').value;
-                if(!s || !e) return [];
-                return allDates.filter(d => {
-                    const mStr = d.substring(0, 7);
-                    return mStr >= s && mStr <= e;
-                });
-            }
-            return [];
+            const m = document.getElementById('stat-mode').value;
+            ['stat-month','stat-year','stat-range-group'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            if(m==='month') document.getElementById('stat-month').classList.remove('hidden');
+            else if(m==='year') document.getElementById('stat-year').classList.remove('hidden');
+            else document.getElementById('stat-range-group').classList.replace('hidden','flex');
         }
 
         function renderStats() {
-            const dates = getFilteredDates();
-            const tbody = document.getElementById('teacher-stats-list');
-            
-            if (dates.length === 0) {
-                return tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-500">此區間尚無任何點名數據</td></tr>`;
-            }
+            const mode = document.getElementById('stat-mode').value;
+            const dates = Object.keys(db.attendance).filter(d => {
+                if(mode==='month') return d.startsWith(document.getElementById('stat-month').value);
+                if(mode==='year') return d.startsWith(document.getElementById('stat-year').value);
+                const mStr = d.substring(0,7); return mStr >= document.getElementById('stat-start').value && mStr <= document.getElementById('stat-end').value;
+            });
 
             const targets = db.users.filter(u => u.role !== 'teacher');
-
-            tbody.innerHTML = targets.map(u => {
+            document.getElementById('teacher-stats-list').innerHTML = targets.map(u => {
                 let p = 0, a = 0, l = 0;
                 dates.forEach(d => {
                     const st = db.attendance[d][u.id];
-                    if (st === 'present') p++;
-                    else if (st === 'absent') a++;
-                    else if (st === 'leave') l++;
+                    if (st==='present') p++; else if (st==='absent') a++; else if (st==='leave') l++;
                 });
-
-                let validDays = p + a; 
-                let rate = validDays > 0 ? Math.round((p / validDays) * 100) : (l > 0 ? 100 : 0);
-                
+                let valid = p + a; let rate = valid > 0 ? Math.round((p/valid)*100) : (l>0?100:0);
                 if(p===0 && a===0 && l===0) return '';
-                const stId = u.studentId ? `(${u.studentId})` : '';
-
-                return `
-                <tr class="hover:bg-gray-50 border-b">
-                    <td class="py-3 px-4 text-left font-medium">${u.name} <span class="text-xs text-gray-500">${stId}</span></td>
-                    <td class="py-3 px-4">${validDays}</td>
-                    <td class="py-3 px-4 text-green-600 font-bold">${p}</td>
-                    <td class="py-3 px-4 text-blue-600">${l}</td>
-                    <td class="py-3 px-4 text-red-600">${a}</td>
-                    <td class="py-3 px-4 font-bold ${rate < 80 ? 'text-red-600' : 'text-gray-800'}">${rate}%</td>
-                </tr>`;
-            }).join('');
+                return `<tr class="border-b"><td class="py-3 px-4">${u.name} <span class="text-xs text-gray-500">(${u.studentId||''})</span></td><td class="py-3 px-4">${valid}</td><td class="py-3 px-4 text-green-600 font-bold">${p}</td><td class="py-3 px-4 text-blue-600">${l}</td><td class="py-3 px-4 text-red-600">${a}</td><td class="py-3 px-4 font-bold ${rate<80?'text-red-600':''}">${rate}%</td></tr>`;
+            }).join('') || `<tr><td colspan="6" class="py-6 text-center">此區間無數據</td></tr>`;
         }
 
         function exportCSV() {
-            const mode = document.getElementById('stat-mode').value;
-            let period = '';
-            if (mode === 'month') period = document.getElementById('stat-month').value;
-            else if (mode === 'year') period = document.getElementById('stat-year').value + "年";
-            else period = `${document.getElementById('stat-start').value}至${document.getElementById('stat-end').value}`;
-
-            let csv = `\uFEFF班別(學號),姓名,統計區間,應到(有紀錄)日數,出席,請假,缺席,出席率\n`;
-            const dates = getFilteredDates();
-            const targets = db.users.filter(u => u.role !== 'teacher');
-
-            targets.forEach(u => {
-                let p = 0, a = 0, l = 0;
-                dates.forEach(d => {
-                    const st = db.attendance[d][u.id];
-                    if (st === 'present') p++; else if (st === 'absent') a++; else if (st === 'leave') l++;
-                });
-                if(p===0 && a===0 && l===0) return;
-                
-                let validDays = p + a;
-                let rate = validDays > 0 ? Math.round((p / validDays) * 100) : (l>0?100:0);
-                csv += `${u.studentId||''},${u.name},${period},${validDays},${p},${l},${a},${rate}%\n`;
+            let csv = `\uFEFF班別(學號),姓名,應到(有紀錄)日數,出席,請假,缺席,出席率\n`;
+            document.querySelectorAll('#teacher-stats-list tr').forEach(tr => {
+                if(tr.cells.length > 1) csv += Array.from(tr.cells).map(c => c.innerText.replace(/\n/g,' ')).join(',') + '\n';
             });
-
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `出席累積統計_${period}.csv`;
-            link.click();
+            link.download = `出席累積統計.csv`; link.click();
         }
     </script>
 </body>
